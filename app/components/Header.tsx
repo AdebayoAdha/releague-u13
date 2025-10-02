@@ -1,18 +1,114 @@
+'use client'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { FaUser, FaSignOutAlt, FaTachometerAlt } from 'react-icons/fa'
 
 export default function Header() {
+  const [showMenu, setShowMenu] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    setUserRole(localStorage.getItem('userRole'))
+  }, [])
+
+  const handleSignOut = () => {
+    localStorage.removeItem('userRole')
+    window.location.href = '/'
+  }
+
   return (
-    <header className="bg-white shadow-md p-4">
-      <div className="container mx-auto flex justify-between items-center">
-        <div className="flex items-center">
-          <Image src="/ReLeague.png" alt="ReLeague" width={60} height={60} className="mr-3" />
-          <h1 className="text-2xl font-bold text-green-800">ReLeague U13</h1>
+    <header style={{ background: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: '16px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Image src="/ReLeague.png" alt="ReLeague" width={60} height={60} style={{ marginRight: '12px' }} />
+          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#065f46' }}>ReLeague U13</h1>
         </div>
-        <nav>
-          <a href="#" className="mx-3 text-green-800 hover:text-green-600">Home</a>
-          <a href="#" className="mx-3 text-green-800 hover:text-green-600">Fixtures</a>
-          <a href="#" className="mx-3 text-green-800 hover:text-green-600">Results</a>
-          <a href="#" className="mx-3 text-green-800 hover:text-green-600">Table</a>
+        <nav role="navigation" aria-label="Main navigation" style={{ display: 'flex', alignItems: 'center' }}>
+          <a href="/" style={{ margin: '0 8px', color: '#065f46', textDecoration: 'none', padding: '8px' }} aria-label="Home page">Home</a>
+          <a href="/fixtures" style={{ margin: '0 8px', color: '#065f46', textDecoration: 'none', padding: '8px' }} aria-label="Match fixtures">Fixtures</a>
+          <a href="/results" style={{ margin: '0 8px', color: '#065f46', textDecoration: 'none', padding: '8px' }} aria-label="Match results">Results</a>
+          <a href="/table" style={{ margin: '0 8px', color: '#065f46', textDecoration: 'none', padding: '8px' }} aria-label="League table">Table</a>
+          <a href="/clubs" style={{ margin: '0 8px', color: '#065f46', textDecoration: 'none', padding: '8px' }} aria-label="Football clubs">Clubs</a>
+          <a href="/contact" style={{ margin: '0 8px', color: '#065f46', textDecoration: 'none', padding: '8px' }} aria-label="Contact information">Contact</a>
+          <a href="/gallery" style={{ margin: '0 8px', color: '#065f46', textDecoration: 'none', padding: '8px' }} aria-label="Photo gallery">Gallery</a>
+          <a href="/news" style={{ margin: '0 8px', color: '#065f46', textDecoration: 'none', padding: '8px' }} aria-label="Latest news">News</a>
+          <a href="/about" style={{ margin: '0 8px', color: '#065f46', textDecoration: 'none', padding: '8px' }} aria-label="About us">About</a>
+          
+          <div 
+            style={{ position: 'relative', margin: '0 8px' }}
+            onMouseEnter={() => setShowMenu(true)}
+            onMouseLeave={() => setShowMenu(false)}
+          >
+            <div style={{ color: '#065f46', padding: '8px', fontSize: '18px', cursor: 'pointer' }}>
+              <FaUser />
+            </div>
+            
+            {showMenu && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: '0',
+                background: 'white',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                borderRadius: '8px',
+                padding: '8px 0',
+                minWidth: '160px',
+                zIndex: 1000
+              }}>
+                {userRole ? (
+                  <>
+                    <a 
+                      href={`/dashboard/${userRole}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '12px 16px',
+                        color: '#065f46',
+                        textDecoration: 'none',
+                        fontSize: '14px'
+                      }}
+                    >
+                      <FaTachometerAlt style={{ marginRight: '8px' }} />
+                      Dashboard
+                    </a>
+                    <button
+                      onClick={handleSignOut}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        width: '100%',
+                        padding: '12px 16px',
+                        background: 'none',
+                        border: 'none',
+                        color: '#dc2626',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <FaSignOutAlt style={{ marginRight: '8px' }} />
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <a 
+                    href="/signin"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '12px 16px',
+                      color: '#065f46',
+                      textDecoration: 'none',
+                      fontSize: '14px'
+                    }}
+                  >
+                    <FaUser style={{ marginRight: '8px' }} />
+                    Sign In
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
         </nav>
       </div>
     </header>

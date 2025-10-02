@@ -1,12 +1,12 @@
 export default function Footer() {
   return (
-    <footer className="bg-green-800 text-white p-8 mt-auto">
-      <div className="container mx-auto text-center">
-        <div className="mb-4">
-          <h3 className="text-xl font-bold mb-2">ReLeague U13</h3>
-          <p className="text-green-200">Building tomorrow's football stars</p>
+    <footer style={{ background: '#065f46', color: 'white', padding: '32px', marginTop: 'auto' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
+        <div style={{ marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>ReLeague U13</h3>
+          <p style={{ color: '#86efac' }}>Building tomorrow's football stars</p>
         </div>
-        <div className="border-t border-green-700 pt-4">
+        <div style={{ borderTop: '1px solid #047857', paddingTop: '16px' }}>
           <p>&copy; 2024 ReLeague U13. All rights reserved.</p>
         </div>
       </div>
