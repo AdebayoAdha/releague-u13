@@ -57,6 +57,13 @@
       "when": 1759493707032,
       "tag": "0007_yummy_fallen_one",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1759500188961,
+      "tag": "0008_mighty_nighthawk",
+      "breakpoints": true
     }
   ]
 }

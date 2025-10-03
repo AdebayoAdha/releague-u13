@@ -74,3 +74,21 @@ export const matchReports = pgTable("match_reports", {
   selectedPlayers: text("selected_players").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const news = pgTable("news", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  status: text("status", { enum: ["published", "draft"] }).notNull().default("draft"),
+  author: text("author").notNull(),
+  image: text("image"),
+  createdAt: text("created_at").notNull(),
+});
+
+export const gallery = pgTable("gallery", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  title: text("title").notNull(),
+  album: text("album").notNull(),
+  image: text("image").notNull(),
+  createdAt: text("created_at").notNull(),
+});

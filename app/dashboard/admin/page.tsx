@@ -31,6 +31,31 @@ export default function AdminDashboard() {
       })
       .catch(() => {})
     
+    fetch('/api/news')
+      .then(res => res.json())
+      .then(data => {
+        const articles = data.articles || []
+        setStats(prev => ({
+          ...prev,
+          articles: articles.filter(a => a.status === 'published').length,
+          drafts: articles.filter(a => a.status === 'draft').length
+        }))
+      })
+      .catch(() => {})
+    
+    fetch('/api/gallery')
+      .then(res => res.json())
+      .then(data => {
+        const photos = data.photos || []
+        const albums = [...new Set(photos.map(p => p.album))]
+        setStats(prev => ({
+          ...prev,
+          photos: photos.length,
+          albums: albums.length
+        }))
+      })
+      .catch(() => {})
+    
     fetch('/api/fixtures')
       .then(res => res.json())
       .then(data => {
@@ -806,25 +831,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div
-            style={{
-              background: "white",
-              padding: "24px",
-              borderRadius: "12px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            }}
-          >
-            <h2
-              style={{
-                fontSize: "24px",
-                fontWeight: "bold",
-                marginBottom: "16px",
-              }}
-            >
-              Recent Activity
-            </h2>
-            <p style={{ color: "#6b7280" }}>No recent activity to display.</p>
-          </div>
+
         </div>
       </div>
     </Main>
