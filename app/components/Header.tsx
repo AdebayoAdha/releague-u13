@@ -1,18 +1,50 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { FaUser, FaSignOutAlt, FaTachometerAlt } from 'react-icons/fa'
 
 export default function Header() {
   const [showMenu, setShowMenu] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [isSignedIn, setIsSignedIn] = useState(false)
+  const [hasTeam, setHasTeam] = useState(false)
+  const pathname = usePathname()
+
+  const fetchUserData = () => {
+    const controller = new AbortController()
+    
+    fetch('/api/auth/me', { 
+      signal: controller.signal,
+      cache: 'no-store'
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Auth failed')
+        return res.json()
+      })
+      .then(data => {
+        setIsSignedIn(data.authenticated)
+        setUserRole(data.role || null)
+        setHasTeam(data.hasTeam || false)
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          setIsSignedIn(false)
+          setUserRole(null)
+          setHasTeam(false)
+        }
+      })
+    
+    return () => controller.abort()
+  }
 
   useEffect(() => {
-    setUserRole(localStorage.getItem('userRole'))
-  }, [])
+    const cleanup = fetchUserData()
+    return cleanup
+  }, [pathname])
 
-  const handleSignOut = () => {
-    localStorage.removeItem('userRole')
+  const handleSignOut = async () => {
+    await fetch('/api/auth/signout', { method: 'POST' })
     window.location.href = '/'
   }
 
@@ -55,10 +87,14 @@ export default function Header() {
                 minWidth: '160px',
                 zIndex: 1000
               }}>
-                {userRole ? (
+                {isSignedIn ? (
                   <>
                     <a 
-                      href={`/dashboard/${userRole}`}
+                      href={
+                        !userRole ? '/role-selection' :
+                        userRole === 'coach' && !hasTeam ? '/team-setup' :
+                        `/dashboard/${userRole}`
+                      }
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -69,7 +105,11 @@ export default function Header() {
                       }}
                     >
                       <FaTachometerAlt style={{ marginRight: '8px' }} />
-                      Dashboard
+                      {
+                        !userRole ? 'Select Role' :
+                        userRole === 'coach' && !hasTeam ? 'Setup Team' :
+                        'Dashboard'
+                      }
                     </a>
                     <button
                       onClick={handleSignOut}

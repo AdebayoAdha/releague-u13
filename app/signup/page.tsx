@@ -21,9 +21,11 @@ export default function SignUp() {
       })
 
       if (res.ok) {
+        const data = await res.json()
         router.push('/role-selection')
       } else {
-        alert('Sign up failed')
+        const errorData = await res.json()
+        alert(errorData.error || 'Sign up failed')
       }
     } catch (error) {
       alert('Sign up failed')

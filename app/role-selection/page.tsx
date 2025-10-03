@@ -1,24 +1,46 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Main from '../components/Main'
 import { FaUserTie, FaUsers } from 'react-icons/fa'
 
 export default function RoleSelection() {
   const [selectedRole, setSelectedRole] = useState('')
+  const [userEmail, setUserEmail] = useState('')
   const router = useRouter()
+  
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) {
+          setUserEmail(data.email)
+        } else {
+          router.push('/signin')
+        }
+      })
+      .catch(() => router.push('/signin'))
+  }, [router])
 
   const handleRoleSelect = async (role: string) => {
     setSelectedRole(role)
     
     try {
-      await fetch('/api/user/role', {
+      const response = await fetch('/api/user/role', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role }),
       })
-      localStorage.setItem('userRole', role)
-      router.push(`/dashboard/${role}`)
+      
+      if (response.ok) {
+        if (role === 'coach') {
+          router.push('/team-setup')
+        } else {
+          router.push(`/dashboard/${role}`)
+        }
+      } else {
+        console.error('Failed to save role')
+      }
     } catch (error) {
       console.error('Failed to save role:', error)
     }

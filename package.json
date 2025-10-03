@@ -9,11 +9,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@hono/node-server": "^1.19.5",
     "@neondatabase/serverless": "^1.0.2",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.7.0",
+    "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.5",
     "drizzle-orm": "^0.44.6",
+    "hono": "^4.9.9",
     "next": "15.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",

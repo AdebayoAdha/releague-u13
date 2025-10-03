@@ -21,15 +21,19 @@ export default function SignIn() {
       })
 
       if (res.ok) {
-        const data = await res.json()
-        localStorage.setItem('userRole', data.role)
-        if (data.role) {
-          router.push(`/dashboard/${data.role}`)
-        } else {
+        const userRes = await fetch('/api/auth/me')
+        const userData = await userRes.json()
+        
+        if (!userData.role) {
           router.push('/role-selection')
+        } else if (userData.role === 'coach' && !userData.hasTeam) {
+          router.push('/team-setup')
+        } else {
+          router.push(`/dashboard/${userData.role}`)
         }
       } else {
-        alert('Sign in failed')
+        const errorData = await res.json()
+        alert(errorData.error || 'Sign in failed')
       }
     } catch (error) {
       alert('Sign in failed')

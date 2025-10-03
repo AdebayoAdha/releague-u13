@@ -1,22 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../../lib/db'
-import { users } from '../../../../lib/schema'
-import { eq } from 'drizzle-orm'
+import { users, sessions } from '../../../../lib/schema'
+import { eq, and, gt } from 'drizzle-orm'
 
 export async function POST(request: NextRequest) {
   try {
     const { role } = await request.json()
+    const sessionToken = request.cookies.get('session')?.value
     
-    // Get user email from Stack Auth (you'll need to implement this)
-    const userEmail = 'user@example.com' // Replace with actual user email from Stack Auth
+    if (!sessionToken) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
     
-    await db.insert(users).values({
-      email: userEmail,
-      role: role,
-    }).onConflictDoUpdate({
-      target: users.email,
-      set: { role: role, updatedAt: new Date() }
-    })
+    const session = await db.select()
+      .from(sessions)
+      .innerJoin(users, eq(sessions.userId, users.id))
+      .where(and(
+        eq(sessions.token, sessionToken),
+        gt(sessions.expiresAt, new Date())
+      ))
+      .limit(1)
+    
+    if (!session.length) {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
+    }
+    
+    await db.update(users)
+      .set({ role: role, updatedAt: new Date() })
+      .where(eq(users.id, session[0].users.id))
     
     return NextResponse.json({ success: true })
   } catch (error) {

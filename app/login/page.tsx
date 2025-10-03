@@ -7,8 +7,10 @@ export default function Login() {
   
   useEffect(() => {
     const userRole = localStorage.getItem('userRole')
-    if (userRole) {
-      router.push('/')
+    const userEmail = localStorage.getItem('userEmail')
+    
+    if (userRole && userEmail) {
+      router.push(`/dashboard/${userRole}`)
     } else {
       router.push('/signin')
     }
