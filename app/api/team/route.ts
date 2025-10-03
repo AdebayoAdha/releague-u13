@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
 import { db } from '../../../lib/db'
-import { teams } from '../../../lib/schema'
+import { teams, users, sessions } from '../../../lib/schema'
+import { eq, and, gt } from 'drizzle-orm'
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -9,9 +10,28 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const teamData = await db.select().from(teams).limit(1);
+    const sessionToken = request.cookies.get('session')?.value
+    
+    if (!sessionToken) {
+      return NextResponse.json({ team: null })
+    }
+    
+    const session = await db.select()
+      .from(sessions)
+      .innerJoin(users, eq(sessions.userId, users.id))
+      .where(and(
+        eq(sessions.token, sessionToken),
+        gt(sessions.expiresAt, new Date())
+      ))
+      .limit(1)
+    
+    if (!session.length) {
+      return NextResponse.json({ team: null })
+    }
+    
+    const teamData = await db.select().from(teams).where(eq(teams.userId, session[0].users.id)).limit(1);
     
     if (teamData.length > 0) {
       return NextResponse.json({ team: teamData[0] });

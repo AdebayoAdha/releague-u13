@@ -1,0 +1,1 @@
+ALTER TABLE "match_results" ALTER COLUMN "team_id" SET DEFAULT null;

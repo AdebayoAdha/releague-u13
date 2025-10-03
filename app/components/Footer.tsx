@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer style={{ background: '#065f46', color: 'white', padding: '32px', marginTop: 'auto' }}>
+    <footer style={{ background: '#065f46', color: 'white', padding: '32px', marginTop: '64px' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
         <div style={{ marginBottom: '16px' }}>
           <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>ReLeague U13</h3>

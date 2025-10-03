@@ -30,6 +30,23 @@ export default function AdminDashboard() {
         }))
       })
       .catch(() => {})
+    
+    fetch('/api/fixtures')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const fixtures = data.fixtures
+          const completedFixtures = fixtures.filter(f => f.status === 'completed')
+          const currentRound = completedFixtures.length > 0 ? Math.max(...completedFixtures.map(f => f.round || 1)) : 1
+          setStats(prev => ({
+            ...prev,
+            upcomingMatches: fixtures.filter(f => f.status === 'scheduled').length,
+            completedMatches: completedFixtures.length,
+            rounds: currentRound
+          }))
+        }
+      })
+      .catch(() => {})
   }, [])
   return (
     <Main>

@@ -1,17 +1,67 @@
 'use client'
+import { useState, useEffect } from 'react'
 import Main from '../../../components/Main'
 import Section from '../../../components/Section'
 import { FaArrowLeft, FaTrophy } from 'react-icons/fa'
 
+interface Standing {
+  position: number
+  team: string
+  played: number
+  won: number
+  drawn: number
+  lost: number
+  gf: number
+  ga: number
+  gd: number
+  points: number
+}
+
 export default function LeagueStandings() {
-  const standings = [
-    { position: 1, team: 'Eagles FC', played: 8, won: 6, drawn: 2, lost: 0, gf: 18, ga: 4, gd: 14, points: 20 },
-    { position: 2, team: 'Lions United', played: 8, won: 5, drawn: 2, lost: 1, gf: 15, ga: 8, gd: 7, points: 17 },
-    { position: 3, team: 'Tigers FC', played: 8, won: 4, drawn: 3, lost: 1, gf: 12, ga: 7, gd: 5, points: 15 },
-    { position: 4, team: 'ReLeague U13', played: 8, won: 3, drawn: 2, lost: 3, gf: 10, ga: 10, gd: 0, points: 11 },
-    { position: 5, team: 'Wolves FC', played: 8, won: 2, drawn: 1, lost: 5, gf: 8, ga: 15, gd: -7, points: 7 },
-    { position: 6, team: 'Panthers FC', played: 8, won: 1, drawn: 0, lost: 7, gf: 5, ga: 24, gd: -19, points: 3 }
-  ]
+  const [standings, setStandings] = useState<Standing[]>([])
+  const [userTeam, setUserTeam] = useState<string>('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [standingsRes, teamRes] = await Promise.all([
+          fetch('/api/standings'),
+          fetch('/api/team')
+        ])
+        
+        const standingsData = await standingsRes.json()
+        const teamData = await teamRes.json()
+        
+        setStandings(standingsData)
+        setUserTeam(teamData.teamName || '')
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  if (loading) {
+    return (
+      <Main>
+        <div style={{ padding: '20px 16px 0' }}>
+          <a href="/dashboard/coach" style={{ display: 'flex', alignItems: 'center', color: '#059669', textDecoration: 'none', marginBottom: '20px' }}>
+            <FaArrowLeft style={{ marginRight: '8px' }} />
+            Back to Dashboard
+          </a>
+        </div>
+        <Section title="League Standings">
+          <div style={{ background: 'white', padding: '32px', borderRadius: '16px', boxShadow: '0 12px 40px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+            <p>Loading standings...</p>
+          </div>
+        </Section>
+      </Main>
+    )
+  }
 
   return (
     <Main>
@@ -51,14 +101,14 @@ export default function LeagueStandings() {
                 {standings.map((team) => (
                   <tr key={team.position} style={{ 
                     borderBottom: '1px solid #e2e8f0',
-                    background: team.team === 'ReLeague U13' ? 'linear-gradient(135deg, #ecfdf5, #f0fdf4)' : 'white',
+                    background: team.team === userTeam ? 'linear-gradient(135deg, #ecfdf5, #f0fdf4)' : 'white',
                     transition: 'all 0.3s ease'
                   }}>
                     <td style={{ padding: '16px 12px', fontWeight: 'bold', color: team.position <= 3 ? '#f59e0b' : '#64748b' }}>
                       {team.position <= 3 && <FaTrophy style={{ marginRight: '8px', color: team.position === 1 ? '#fbbf24' : team.position === 2 ? '#9ca3af' : '#cd7c2f' }} />}
                       {team.position}
                     </td>
-                    <td style={{ padding: '16px 12px', fontWeight: team.team === 'ReLeague U13' ? 'bold' : '500', color: team.team === 'ReLeague U13' ? '#059669' : '#1e293b' }}>
+                    <td style={{ padding: '16px 12px', fontWeight: team.team === userTeam ? 'bold' : '500', color: team.team === userTeam ? '#059669' : '#1e293b' }}>
                       {team.team}
                     </td>
                     <td style={{ padding: '16px 12px', textAlign: 'center', color: '#64748b' }}>{team.played}</td>
@@ -89,6 +139,7 @@ export default function LeagueStandings() {
               <span><strong>GD:</strong> Goal Difference</span>
               <span><strong>Pts:</strong> Points</span>
             </div>
+            <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '8px', margin: '8px 0 0 0' }}>Teams sorted by points, head-to-head record, goal difference, then goals scored.</p>
           </div>
         </div>
       </Section>

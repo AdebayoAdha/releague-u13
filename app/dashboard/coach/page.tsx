@@ -5,6 +5,12 @@ import { FaUsers, FaClipboardList, FaChartLine, FaCalendarAlt, FaTrophy } from '
 
 export default function CoachDashboard() {
   const [completionPercentage, setCompletionPercentage] = useState(0)
+  const [playersCount, setPlayersCount] = useState(0)
+  const [matchReports, setMatchReports] = useState({ pending: 0, submitted: 0 })
+  const [teamStats, setTeamStats] = useState({ goals: 0, winRate: 0 })
+  const [teamMatches, setTeamMatches] = useState({ upcoming: 0, completed: 0 })
+  const [teamName, setTeamName] = useState('')
+  const [teamStanding, setTeamStanding] = useState({ position: '-', points: 0 })
 
   useEffect(() => {
     const checkCompletion = async () => {
@@ -21,6 +27,37 @@ export default function CoachDashboard() {
             if (data.team.coachImage) completed++
             
             setCompletionPercentage(Math.round((completed / total) * 100))
+            setTeamName(data.team.teamName || '')
+            
+            // Fetch team standings
+            if (data.team.teamName) {
+              fetch('/api/standings')
+                .then(res => res.json())
+                .then(standings => {
+                  const teamData = standings.find(s => s.team === data.team.teamName)
+                  if (teamData) {
+                    setTeamStanding({ position: teamData.position, points: teamData.points })
+                  }
+                })
+                .catch(() => {})
+            }
+            
+            // Fetch team fixtures
+            if (data.team.teamName) {
+              const fixturesResponse = await fetch('/api/fixtures')
+              if (fixturesResponse.ok) {
+                const fixturesData = await fixturesResponse.json()
+                if (fixturesData.success) {
+                  const teamFixtures = fixturesData.fixtures.filter(f => 
+                    f.homeTeam === data.team.teamName || f.awayTeam === data.team.teamName
+                  )
+                  setTeamMatches({
+                    upcoming: teamFixtures.filter(f => f.status === 'scheduled').length,
+                    completed: teamFixtures.filter(f => f.status === 'completed').length
+                  })
+                }
+              }
+            }
           }
         }
       } catch (error) {
@@ -28,6 +65,55 @@ export default function CoachDashboard() {
       }
     }
     checkCompletion()
+    
+    // Fetch players count
+    fetch('/api/players')
+      .then(res => res.json())
+      .then(data => {
+        if (data.players) {
+          setPlayersCount(data.players.length)
+        }
+      })
+      .catch(() => {})
+    
+    // Fetch team data first, then fixtures
+    fetch('/api/team')
+      .then(res => res.json())
+      .then(teamData => {
+        if (teamData.team?.teamName) {
+          const teamName = teamData.team.teamName
+          
+          fetch('/api/fixtures')
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                const teamCompleted = data.fixtures.filter(f => 
+                  f.status === 'completed' && 
+                  (f.homeTeam === teamName || f.awayTeam === teamName)
+                )
+                
+                // Fetch submitted reports
+                fetch('/api/match-reports')
+                  .then(res => res.json())
+                  .then(reportsData => {
+                    const submitted = reportsData.success ? reportsData.reports.length : 0
+                    const pending = teamCompleted.length - submitted
+                    setMatchReports({ pending: Math.max(0, pending), submitted })
+                  })
+                  .catch(() => {
+                    setMatchReports({ pending: teamCompleted.length, submitted: 0 })
+                  })
+          
+                const totalGoals = teamCompleted.reduce((sum, f) => sum + (f.homeScore || 0) + (f.awayScore || 0), 0)
+                const wins = teamCompleted.filter(f => f.homeScore > f.awayScore || f.awayScore > f.homeScore).length
+                const winRate = teamCompleted.length > 0 ? Math.round((wins / teamCompleted.length) * 100) : 0
+                
+                setTeamStats({ goals: totalGoals, winRate })
+              }
+            })
+        }
+      })
+      .catch(() => {})
   }, [])
 
   return (
@@ -55,11 +141,11 @@ export default function CoachDashboard() {
               <p style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '24px', fontSize: '16px', fontWeight: '500' }}>Manage players and roster</p>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
-                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>0/20</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>{playersCount}/20</div>
                   <div style={{ fontSize: '14px', opacity: '0.8' }}>Players</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>0</div>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>{teamMatches.upcoming + teamMatches.completed}</div>
                   <div style={{ fontSize: '14px', opacity: '0.8' }}>Matches</div>
                 </div>
               </div>
@@ -97,11 +183,11 @@ export default function CoachDashboard() {
               <p style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '24px', fontSize: '16px', fontWeight: '500' }}>View team match schedule</p>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
-                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>0</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>{teamMatches.upcoming}</div>
                   <div style={{ fontSize: '14px', opacity: '0.8' }}>Upcoming</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>0</div>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>{teamMatches.completed}</div>
                   <div style={{ fontSize: '14px', opacity: '0.8' }}>Completed</div>
                 </div>
               </div>
@@ -139,11 +225,11 @@ export default function CoachDashboard() {
               <p style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '24px', fontSize: '16px', fontWeight: '500' }}>Submit and view match reports</p>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
-                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>0</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>{matchReports.pending}</div>
                   <div style={{ fontSize: '14px', opacity: '0.8' }}>Pending</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>0</div>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>{matchReports.submitted}</div>
                   <div style={{ fontSize: '14px', opacity: '0.8' }}>Submitted</div>
                 </div>
               </div>
@@ -181,11 +267,11 @@ export default function CoachDashboard() {
               <p style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '24px', fontSize: '16px', fontWeight: '500' }}>View team performance</p>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
-                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>0</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>{teamStats.goals}</div>
                   <div style={{ fontSize: '14px', opacity: '0.8' }}>Goals</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>0%</div>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>{teamStats.winRate}%</div>
                   <div style={{ fontSize: '14px', opacity: '0.8' }}>Win Rate</div>
                 </div>
               </div>
@@ -265,11 +351,11 @@ export default function CoachDashboard() {
               <p style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '24px', fontSize: '16px', fontWeight: '500' }}>View league table and rankings</p>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
-                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>-</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>{teamStanding.position}</div>
                   <div style={{ fontSize: '14px', opacity: '0.8' }}>Position</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>0</div>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>{teamStanding.points}</div>
                   <div style={{ fontSize: '14px', opacity: '0.8' }}>Points</div>
                 </div>
               </div>
@@ -292,17 +378,7 @@ export default function CoachDashboard() {
             </div>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
-            <div style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>Upcoming Matches</h2>
-              <p style={{ color: '#6b7280' }}>No upcoming matches scheduled.</p>
-            </div>
-            
-            <div style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>Team News</h2>
-              <p style={{ color: '#6b7280' }}>No recent team updates.</p>
-            </div>
-          </div>
+
         </div>
       </div>
     </Main>
